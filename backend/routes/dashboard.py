@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from app import db
+from extensions import db
 from models import ActivityLog, Post
 from middleware import authenticate, require_premium
 from sqlalchemy import func
