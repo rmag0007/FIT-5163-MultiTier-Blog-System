@@ -4,6 +4,8 @@ from models import ActivityLog, Post
 from middleware import authenticate, require_premium
 from sqlalchemy import func
 
+# Dashboard endpoints provide usage analytics for logged-in authors
+# Premium users receive more detailed metrics than basic users
 dashboard_bp = Blueprint("dashboard", __name__)
 
 @dashboard_bp.route("/stats/basic", methods=["GET"])

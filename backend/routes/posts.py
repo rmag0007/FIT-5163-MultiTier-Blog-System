@@ -1,3 +1,9 @@
+"""Public CRUD endpoints for blog posts.
+
+Provides simple create/read/update/delete operations. Creation and
+mutating operations require authentication and enforce ownership.
+"""
+
 from flask import Blueprint, request, jsonify
 from extensions import db
 from models import Post

@@ -1,19 +1,23 @@
 import axios from "axios";
 
+// Axios client used by the frontend to communicate with the Flask API.
+// `baseURL` points to the backend dev server; in production this should
+// be replaced with the deployed API URL.
 const client = axios.create({
   baseURL: "http://127.0.0.1:5000/api",
-  // Required because we use a self-signed cert in development
+  // `httpsAgent` may be configured to trust self-signed certs in dev.
   httpsAgent: undefined
 });
 
-// Automatically attach JWT token to every request if it exists
+// Attach JWT token from localStorage to every outgoing request when present.
 client.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-// Automatically handle 401 responses — token expired or invalid
+// Global response handler: when the API returns 401 remove local auth
+// state and redirect to login so the user can re-authenticate.
 client.interceptors.response.use(
   (response) => response,
   (error) => {

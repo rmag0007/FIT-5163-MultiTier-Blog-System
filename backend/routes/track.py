@@ -9,8 +9,10 @@ ALLOWED_EVENTS = ["view", "like", "comment", "share"]
 
 @track_bp.route("/track", methods=["POST"])
 def track():
+    """Record anonymous activity events for a blog post."""
     data = request.get_json()
 
+    # Require all keys needed to identify and classify the event.
     required = ["post_id", "event_type", "session_id"]
     if not all(k in data for k in required):
         return jsonify({"error": "Missing required fields"}), 400
@@ -23,6 +25,7 @@ def track():
     except (ValueError, TypeError):
         return jsonify({"error": "post_id must be an integer"}), 400
 
+    # Use default values when optional analytics fields are omitted.
     time_spent = data.get("time_spent_seconds", 0)
     scroll_depth = data.get("scroll_depth_percent", 0)
 
@@ -32,7 +35,7 @@ def track():
     if not isinstance(scroll_depth, (int, float)) or not (0 <= scroll_depth <= 100):
         return jsonify({"error": "scroll_depth_percent must be between 0 and 100"}), 400
 
-    # Get real IP and look up country server side
+    # Resolve the client IP on the server and store it only in encrypted form.
     ip_raw = request.remote_addr or "unknown"
     country = get_country_from_ip(ip_raw)
     ip_encrypted = encrypt(ip_raw)
@@ -58,6 +61,7 @@ def track():
 
 @track_bp.route("/track/summary/<int:post_id>", methods=["GET"])
 def track_summary(post_id):
+    """Return aggregate counts for each event type on a given post."""
     counts = {}
     for event in ALLOWED_EVENTS:
         counts[event] = ActivityLog.query.filter_by(

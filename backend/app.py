@@ -1,15 +1,26 @@
+"""Application factory for the Flask backend.
+
+This module creates and configures the Flask `app` instance, applies
+extensions and registers blueprints for the different API areas.
+"""
+
 from flask import Flask
 from flask_cors import CORS
 from config import Config
 from extensions import db
 
+
 def create_app():
+    """Build and return a configured Flask application."""
     app = Flask(__name__)
     app.config.from_object(Config)
 
+    # Enable cross-origin requests for the frontend dev server and
+    # initialize the database extension.
     CORS(app)
     db.init_app(app)
 
+    # Register API blueprints grouped by functionality
     from routes.auth import auth_bp
     from routes.track import track_bp
     from routes.dashboard import dashboard_bp
@@ -22,7 +33,8 @@ def create_app():
 
     return app
 
+
 if __name__ == "__main__":
     app = create_app()
-    #app.run(ssl_context="adhoc", debug=True)
+    # In production serve behind a real web server; debug mode is for dev.
     app.run(debug=True)

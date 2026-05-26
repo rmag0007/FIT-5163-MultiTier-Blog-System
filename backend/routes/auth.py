@@ -1,3 +1,10 @@
+"""Authentication routes for the blog analytics application.
+
+This module exposes endpoints for registering, logging in, and
+managing the authenticated user's profile. Sensitive data such as
+email addresses are stored encrypted and passwords are hashed.
+"""
+
 import jwt
 import bcrypt
 from datetime import datetime, timedelta
@@ -12,11 +19,23 @@ import re
 auth_bp = Blueprint("auth", __name__)
 
 def is_valid_email(email: str) -> bool:
+    """Return True when the provided string is a plausible email.
+
+    This uses a simple regex to validate common email formats; it is
+    intentionally permissive for test/demo purposes and not a full
+    production-grade validator.
+    """
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return bool(re.match(pattern, email))
 
 @auth_bp.route("/register", methods=["POST"])
 def register():
+    """Create a new user account.
+
+    Expects JSON with `username`, `email`, `password` and an optional
+    `tier` (basic|premium). Passwords are hashed before storing and
+    the email is encrypted to protect PII at rest.
+    """
     data = request.get_json()
     username = data.get("username")
     email = data.get("email")
@@ -57,6 +76,7 @@ def register():
 
 @auth_bp.route("/login", methods=["POST"])
 def login():
+    """Authenticate a user and return a JWT token on success."""
     data = request.get_json()
     username = data.get("username")
     password = data.get("password")
@@ -88,7 +108,12 @@ def login():
 @auth_bp.route("/me", methods=["GET"])
 @authenticate
 def get_me():
-    """Get current logged in user profile"""
+    """Return the currently authenticated user's public profile.
+
+    The email value is decrypted on the fly for the response; only
+    limited profile fields are returned to avoid exposing unnecessary
+    data.
+    """
     user = User.query.get(request.user["user_id"])
     if not user:
         return jsonify({"error": "User not found"}), 404
@@ -105,7 +130,10 @@ def get_me():
 @auth_bp.route("/me", methods=["PUT"])
 @authenticate
 def update_me():
-    """Update current user's username or email"""
+    """Allow the authenticated user to update username or email.
+
+    Username uniqueness is enforced; emails are stored encrypted.
+    """
     data = request.get_json()
     user = User.query.get(request.user["user_id"])
     if not user:
@@ -129,7 +157,11 @@ def update_me():
 @auth_bp.route("/password", methods=["PUT"])
 @authenticate
 def update_password():
-    """Change current user password"""
+    """Change the authenticated user's password.
+
+    The current password must be provided and verified before the
+    new password is accepted and re-hashed.
+    """
     data = request.get_json()
     current = data.get("current_password")
     new = data.get("new_password")
@@ -154,8 +186,9 @@ def update_password():
 @auth_bp.route("/logout", methods=["POST"])
 @authenticate
 def logout():
-    """
-    JWT logout — tokens are stateless so we just confirm on server side.
-    Frontend is responsible for deleting the token from localStorage.
+    """Logout endpoint (stateless).
+
+    Since JWTs are stateless the server cannot revoke tokens here; the
+    frontend should remove the token from storage to complete logout.
     """
     return jsonify({"message": "Logged out successfully"})
