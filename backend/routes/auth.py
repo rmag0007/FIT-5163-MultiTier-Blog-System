@@ -80,7 +80,8 @@ def login():
     return jsonify({
         "token": token,
         "tier": user.tier,
-        "username": user.username
+        "username": user.username,
+        "user_id": user.id
     })
 
 

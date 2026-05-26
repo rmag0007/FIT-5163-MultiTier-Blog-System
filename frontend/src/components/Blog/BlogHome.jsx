@@ -1,54 +1,111 @@
-import { useState } from "react";
-import BlogPost from "./BlogPost";
-
-const MOCK_POSTS = [
-  {
-    id: 1,
-    title: "Getting Started with Python",
-    content: "Python is a versatile language used in web development, data science, and more. In this post we explore the basics of Python and why it's so popular among beginners and experts alike.",
-    author: "Alice"
-  },
-  {
-    id: 2,
-    title: "Why Security Matters in Web Apps",
-    content: "Security is often an afterthought in web development. This post covers the most common vulnerabilities like SQL injection, XSS, and how to protect against them effectively.",
-    author: "Bob"
-  },
-  {
-    id: 3,
-    title: "Understanding REST APIs",
-    content: "REST APIs are the backbone of modern web applications. Learn how they work, how to design them well, and how to consume them from your frontend applications.",
-    author: "Alice"
-  }
-];
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import client from "../../api/client";
 
 export default function BlogHome() {
-  const [selectedPost, setSelectedPost] = useState(null);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const token = localStorage.getItem("token");
+  const username = localStorage.getItem("username");
+
+  useEffect(() => {
+    client.get("/posts")
+      .then((res) => setPosts(res.data))
+      .catch(() => setPosts([]))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
-    <div>
-      <nav>
-        <h1>The Dev Blog</h1>
-        <a href="/login">Blogger Login</a>
+    <div className="page">
+      <nav className="navbar">
+        <div className="navbar-inner">
+          <a href="/" className="navbar-brand">
+            Dev<span>Blog</span>
+          </a>
+          <div className="navbar-actions">
+            {token ? (
+              <>
+                <span className="navbar-user">Hi, {username}</span>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => navigate("/dashboard")}
+                >
+                  Dashboard
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => navigate("/login")}
+                >
+                  Login
+                </button>
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => navigate("/register")}
+                >
+                  Register
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       </nav>
 
-      {selectedPost ? (
-        <>
-          <button onClick={() => setSelectedPost(null)}>← Back</button>
-          <BlogPost post={selectedPost} />
-        </>
-      ) : (
-        <div>
+      <div className="container">
+        <div className="home-hero">
+          <h1>Stories worth reading</h1>
+          <p>Discover posts from developers, writers, and thinkers.</p>
+        </div>
+
+        <div className="section-header">
           <h2>Latest Posts</h2>
-          {MOCK_POSTS.map((post) => (
-            <div key={post.id} onClick={() => setSelectedPost(post)} style={{ cursor: "pointer", marginBottom: "1rem" }}>
-              <h3>{post.title}</h3>
-              <p>By {post.author}</p>
-              <p>{post.content.substring(0, 100)}...</p>
+          {token && (
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => navigate("/create-post")}
+            >
+              + New Post
+            </button>
+          )}
+        </div>
+
+        {loading && <div className="loading">Loading posts...</div>}
+
+        {!loading && posts.length === 0 && (
+          <div className="empty-state">
+            <p>No posts yet. Be the first to write one!</p>
+            {token && (
+              <button
+                className="btn btn-primary"
+                onClick={() => navigate("/create-post")}
+              >
+                Create Post
+              </button>
+            )}
+          </div>
+        )}
+
+        <div className="card-grid">
+          {posts.map((post) => (
+            <div
+              key={post.id}
+              className="card card-clickable"
+              onClick={() => navigate(`/post/${post.id}`)}
+            >
+              <h3 className="post-card-title">{post.title}</h3>
+              <p className="post-excerpt">{post.content}</p>
+              <span className="post-date">
+                {new Date(post.created_at).toLocaleDateString("en-AU", {
+                  day: "numeric", month: "long", year: "numeric"
+                })}
+              </span>
             </div>
           ))}
         </div>
-      )}
+      </div>
     </div>
   );
 }
