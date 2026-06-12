@@ -37,4 +37,8 @@ def create_app():
 if __name__ == "__main__":
     app = create_app()
     # In production serve behind a real web server; debug mode is for dev.
-    app.run(debug=True)
+    app.run(
+        ssl_context=("127.0.0.1+1.pem", "127.0.0.1+1-key.pem"),
+        debug=True,
+        port=5000
+    )

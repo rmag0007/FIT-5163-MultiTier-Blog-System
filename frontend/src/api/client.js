@@ -4,9 +4,8 @@ import axios from "axios";
 // `baseURL` points to the backend dev server; in production this should
 // be replaced with the deployed API URL.
 const client = axios.create({
-  baseURL: "http://127.0.0.1:5000/api",
+  baseURL: "https://127.0.0.1:5000/api",
   // `httpsAgent` may be configured to trust self-signed certs in dev.
-  httpsAgent: undefined
 });
 
 // Attach JWT token from localStorage to every outgoing request when present.
@@ -25,6 +24,7 @@ client.interceptors.response.use(
       localStorage.removeItem("token");
       localStorage.removeItem("tier");
       localStorage.removeItem("username");
+      localStorage.removeItem("user_id");
       window.location.href = "/login";
     }
     return Promise.reject(error);
